@@ -10,10 +10,16 @@ from sklearn.naive_bayes import MultinomialNB
 import numpy as np
 import pylab as pl
 import matplotlib.pyplot as plt
-#import MySQLdb
+import MySQLdb
 import jieba.analyse
 from sklearn.svm import SVC
-import MySQLdb
+from sklearn.decomposition import PCA
+import jieba.analyse
+from sklearn.feature_extraction.text import TfidfVectorizer ,HashingVectorizer,CountVectorizer,TfidfTransformer
+from sklearn.naive_bayes import GaussianNB
+from sklearn.decomposition import PCA
+from sklearn.decomposition import NMF, LatentDirichletAllocation
+
 
 #生成停用词字典
 def MakeWordsSet(words_file):
@@ -179,7 +185,15 @@ def TextProcessingsep(train_path,test_path, test_size):
             test_data_list.append(word_list)
             test_class_list.append(folder.decode('utf-8'))
             j += 1
-
+        '''
+        for i in news_list:
+            segs = jieba.cut(i, cut_all=False)
+            segs = [word.encode('utf-8') for word in list(segs)]
+            segs = [word for word in list(segs) if word not in stoplist]
+            tags = jieba.analyse.extract_tags("".join(segs), 10)
+            # print " ".join(tags)
+            keywords.append(" ".join(tags).encode('utf-8'))
+        '''
 
     # 统计词频放入all_words_dict
     all_words_dict = {}
@@ -225,14 +239,10 @@ def words_dict(all_words_list, deleteN, stopwords_set=set()):
             feature_words.append(all_words_list[t])
             n += 1
 
-
     for i in feature_words:
        print "fea:     "+i
     print "--------------finish--------------"
     return feature_words
-
-
-
 
 
 
@@ -299,6 +309,17 @@ def TextFeatures(train_data_list, test_data_list, feature_words, flag='sklearn')
         elif flag == 'sklearn':
             ## sklearn特征 list
             features = [1 if word in text_words else 0 for word in feature_words]
+            '''
+                       print "content: "
+                       for i in text:
+                           print "".join(i),
+                       print '---------------------------------------------'
+                       print "res"
+                       for i in feature_words:
+                           if i in text_words:
+                               print i+"   ",
+                       print '----------------------------------------------'
+                       '''
         elif flag == 'svm':
             features = [1 if word in text_words else 0 for word in feature_words]
         else:
@@ -320,7 +341,7 @@ def TextClassifier(train_feature_list, test_feature_list, train_class_list, test
     for word in test_class_list:
         print "test:    " + word
     '''
-    y=[]
+    #y=[]
     if flag == 'nltk':
         ## nltk分类器
         train_flist = zip(train_feature_list, train_class_list)
@@ -338,19 +359,23 @@ def TextClassifier(train_feature_list, test_feature_list, train_class_list, test
         x=classifier.predict(test_feature_list)
         # print test_feature_list
         print classifier.predict(test_feature_list)
-        y=x.tolist()
+        #y=x.tolist()
         # print y[0]
         # for test_feature in test_feature_list:
         #     print classifier.predict(test_feature)[0]
 
         test_accuracy = classifier.score(test_feature_list, test_class_list)
     elif flag=='svm':
-        classifier=SVC()
+        classifier=SVC(kernel = 'linear')
         classifier.fit(train_feature_list,train_class_list)
         print "presvm:"
         print classifier.predict(test_feature_list)
 
         test_accuracy=classifier.score(test_feature_list, test_class_list)
+    elif flag=='GussNB':
+        classifier=GaussianNB().fit(train_feature_list, train_class_list)
+        print "pre: "
+        print classifier.predict(test_feature_list)
     else:
         test_accuracy = []
 
@@ -426,7 +451,112 @@ def NewsfromDatabase(news_list):
 
     pass
 
+def dimension_reduce(train_data_list_f, test_data_list_f):
 
+    corpus_train=[]
+    corpus_test=[]
+    train_feature_list=[]
+    test_feature_list=[]
+
+    for text in train_data_list_f:
+        line_feature = jieba.analyse.textrank("".join(text), topK=10)
+        line = "/".join(line_feature)
+        corpus_train.append(line)
+    for text in test_data_list_f:
+        line_feature = jieba.analyse.textrank("".join(text), topK=10)
+        line = "/".join(line_feature)
+        corpus_test.append(line)
+
+    # newsgroup_train.data is the original documents, but we need to extract the
+    # feature vectors inorder to model the text data
+
+    '''
+    vectorizer = HashingVectorizer(non_negative=True,n_features=10000)
+    fea_train = vectorizer.fit_transform(corpus_train)
+    fea_test = vectorizer.fit_transform(corpus_test)
+    '''
+
+    tv = TfidfVectorizer(sublinear_tf=True,max_df=0.5,)
+    tfidf_train_2 = tv.fit_transform(corpus_train)
+    tv2 = TfidfVectorizer(vocabulary=tv.vocabulary_)
+    tfidf_test_2 = tv2.fit_transform(corpus_test)
+    analyze = tv.build_analyzer()
+    tv.get_feature_names()  # statistical features/terms
+
+    '''
+    tfidfvec = TfidfVectorizer()
+    train_cop_tfidf = tfidfvec.fit_transform(corpus_train)
+    weight_train = train_cop_tfidf.toarray()
+    '''
+
+    '''
+    for i in weight_train:
+        train_sort=sorted(list(i))
+        feature=[]
+        for j in train_sort:
+            if j!=0 and j<8:
+                feature.append(j)
+        train_feature_list.append(feature)
+    '''
+    #pca_train = PCA(n_components=50)
+    #train_feature_list = pca_train.fit_transform(tfidf_train_2)
+
+
+
+    '''
+    for text in test_data_list_f:
+        line_feature = jieba.analyse.textrank("".join(text), topK=10)
+        line = "/".join(line_feature)
+        corpus_test.append(line)
+
+    tfidfvec = TfidfVectorizer()
+    test_cop_tfidf = tfidfvec.fit_transform(corpus_test)
+    weight_test = test_cop_tfidf.toarray()
+    '''
+    '''
+    for i in weight_test:
+        test_sort=sorted(list(i))
+        feature=[]
+        for j in test_sort:
+            if j!=0 and j<8:
+                feature.append(j)
+        test_feature_list.append(feature)
+    '''
+    #pca_test = PCA(n_components=50)
+    #test_feature_list = pca_test.fit_transform(tfidf_test_2)
+
+    '''
+    train_nmf = NMF(n_components=10, random_state=1,
+              beta_loss='kullback-leibler', solver='mu', max_iter=1000, alpha=.1,
+              l1_ratio=.5).fit(train_cop_tfidf)
+    test_nmf = NMF(n_components=10, random_state=1,
+                    beta_loss='kullback-leibler', solver='mu', max_iter=1000, alpha=.1,
+                    l1_ratio=.5).fit(test_cop_tfidf)
+    '''
+    #print(type(train_cop_tfidf))
+    #print(type(train_feature_list))
+    #print(type(test_feature_list))
+
+    return tfidf_train_2 , tfidf_test_2
+    #return train_nmf, test_nmf
+    #return train_feature_list, test_feature_list
+
+def remove_stopwords(train_data_list, test_data_list,stopwords_set):
+    train_data_filter=[]
+    test_data_filter=[]
+    for i in train_data_list:
+        filter = []
+        for j in i:
+            if j not in stopwords_file:
+                filter.append(j)
+        train_data_filter.append(filter)
+    for i in test_data_list:
+        filter = []
+        for j in i:
+            if j not in stopwords_file:
+                filter.append(j)
+        test_data_filter.append(filter)
+    return train_data_filter , test_data_filter
 
 if __name__ == '__main__':
 
@@ -484,11 +614,20 @@ if __name__ == '__main__':
     allpre=[0]*num
     count=0
     feature_words = words_dict_new(train_path, stopwords_set)
+
+    train_data_list_f, test_data_list_f = remove_stopwords(train_data_list, test_data_list, stopwords_set)
+
+
     #多组实验
     for deleteN in deleteNs:
         # feature_words = words_dict(all_words_list, deleteN)
         # feature_words = words_dict_new(all_words_list, deleteN, stopwords_set)
-        train_feature_list, test_feature_list = TextFeatures(train_data_list, test_data_list, feature_words, 'svm')
+        train_feature_list, test_feature_list = TextFeatures(train_data_list_f, test_data_list_f, feature_words, 'svm')
+
+        '''
+        调用降维算法
+        '''
+        #train_feature_list, test_feature_list = dimension_reduce(train_data_list_f, test_data_list_f)
 
         '''
         for x in train_feature_list :
@@ -550,6 +689,7 @@ if __name__ == '__main__':
     conn.commit()
     conn.close()
 '''
+    print "finished"
 
     # 结果评价，如此处报错可暂时忽略
     # plt.figure()
@@ -558,5 +698,3 @@ if __name__ == '__main__':
     # plt.xlabel('deleteNs')
     # plt.ylabel('test_accuracy')
     # plt.savefig('result.png')
-
-    print "finished"
