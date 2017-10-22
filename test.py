@@ -14,6 +14,7 @@ from sklearn.svm import SVC
 from sklearn.decomposition import PCA,NMF, LatentDirichletAllocation
 from sklearn.feature_extraction.text import TfidfVectorizer ,HashingVectorizer,CountVectorizer,TfidfTransformer
 from sklearn.naive_bayes import GaussianNB
+import codecs
 
 
 '''
@@ -22,6 +23,8 @@ from sklearn.naive_bayes import GaussianNB
 '''
 def TextProcessingsep(test_path, test_size):
     folder_list = os.listdir(test_path.decode('utf-8'))
+    test_data_list= []
+    test_class_list= []
     for folder in folder_list:
         new_folder_path = os.path.join(test_path, folder)
         #print new_folder_path
@@ -69,56 +72,6 @@ def MakeWordsSet(words_file):
     return words_set
 
 
-#从每类新闻训练集中抽取指定数量的feature words
-def words_dict_new(train_path, stopwords_set=set()):
-    # 统计词频放入all_words_dict
-    feature_words = []
-    for i in range(1,8,1):
-        # folder_list = os.listdir(train_path.decode('utf-8'))
-        train_data_list = []
-        train_class_list = []
-        # 类间循环
-        # for folder in folder_list:
-        new_folder_path = os.path.join(train_path, str(i))
-        files = os.listdir(new_folder_path.decode('utf-8'))
-            # 类内循环
-        j = 1
-        for file in files:
-            if j > 2000:  # 每类text样本数最多100
-                break
-            with open(os.path.join(new_folder_path, file).replace('\\', '/'), 'r') as fp:
-                raw = fp.read()
-            word_cut = jieba.cut(raw, cut_all=False)  # 精确模式，返回的结构是一个可迭代的genertor
-            word_list = list(word_cut)  # genertor转化为list，每个词unicode格式
-            train_data_list.append(word_list)
-            train_class_list.append(file.decode('utf-8'))
-            j += 1
-        all_words_dict = {}
-        for word_list in train_data_list:
-            for word in word_list:
-                if all_words_dict.has_key(word):
-                    all_words_dict[word] += 1
-                else:
-                    all_words_dict[word] = 1
-        # key函数利用词频进行降序排序
-        all_words_tuple_list = sorted(all_words_dict.items(), key=lambda f: f[1], reverse=True)  # 内建函数sorted参数需为list
-        all_words_list = list(zip(*all_words_tuple_list)[0])
-    # 选取特征词
-
-        n = 1
-        for t in range(0, len(all_words_list), 1):
-            if n > 100: # feature_words的维度1000
-                break
-            # print all_words_list[t]
-            if not all_words_list[t].isdigit() and all_words_list[t] not in stopwords_set and 1<len(all_words_list[t])<5:
-                feature_words.append(all_words_list[t])
-                n += 1
-
-    #
-    # for i in feature_words:
-    #    print "fea:     "+i
-    # print "--------------finish--------------"
-    return feature_words
 
 
 def remove_stopwords(train_data_list, test_data_list,stopwords_set):
@@ -322,24 +275,24 @@ if __name__ == '__main__':
     print "start"
     train_data_list = []
     train_class_list = []
-    all_words_list = []
+    #all_words_list = []
+    feature_words = []
     file_traindata = open("train_data.txt",'r')
     file_trainclass = open("train_class.txt",'r')
-    all_word = open("allword.txt",'r')
+    file_features = open("feature_words.txt",'r')
+
 
     for lines in file_traindata:
-        train_data_list.append(list(map(str, lines.strip().split(','))))
-
+        train_data_list.append(list(lines.strip()))
     for lines in file_trainclass:
-        line =list(map(str, lines.strip().split(',')))
-        temp = []
-        for i in line:
-            item = int(i)
-            temp.append(item)
-        train_class_list.append(temp)
+        train_class_list.append(int(lines))
+    for lines in file_features:
+        feature_words.append(lines.strip().decode())
 
-    #for lines in file_traindata:
-    #    all_words_list.append(list(map(str, lines.strip().split(','))))
+    print ("assd")
+    for i in train_data_list:
+        print i
+        break
 
 
     '''
@@ -348,10 +301,9 @@ if __name__ == '__main__':
        新数据集数量是原数据集10倍
        原始搜集的数据里面各个数据集数量有较大偏差，为确保结果，将多余数据存入datax文件夹中
     '''
-    test_path='/usr/local/lib/python2.7/dist-packages/adascrawler/newscrawler/Naive-Bayes-Classifier-master/Naive-Bayes-Classifier-master/data/test'
+    test_path='./test/'
     test_data_list, test_class_list = TextProcessingsep(test_path,test_size=0.2)
-    stopwords_file = '/usr/local/lib/python2.7/dist-packages/adascrawler/newscrawler/Naive-Bayes-Classifier-master/Naive-Bayes-Classifier-master/stopwords_cn.txt'
-    # stopwords_file = 'F:/STUDY_DATA/Naive-Bayes-Classifier-master/Naive-Bayes-Classifier-master/stopwords_cn.txt'
+    stopwords_file = './stopwords_cn.txt'
     stopwords_set = MakeWordsSet(stopwords_file)
 
     ## 文本特征提取和分类
@@ -362,9 +314,13 @@ if __name__ == '__main__':
     test_accuracy_list = []
     allpre = [0] * num
     count = 0
-    feature_words = words_dict_new(train_path, stopwords_set)
-
     train_data_list_f, test_data_list_f = remove_stopwords(train_data_list, test_data_list, stopwords_set)
+    # print "=============="
+    # for i in train_data_list_f:
+    #     print i
+    # print "==================="
+    # for i in test_data_list_f:
+    #     print i
 
     # 多组实验
     for deleteN in deleteNs:

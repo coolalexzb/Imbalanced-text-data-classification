@@ -2,6 +2,7 @@
 import os
 import jieba
 import jieba.analyse
+import codecs
 
 '''
     数据预处理，原函数因为样本数量有限，对样本做了训练集和测试集的划分，此处不需要划分，
@@ -11,14 +12,16 @@ def TextProcessingsep(train_path,test_size):
     folder_list = os.listdir(train_path.decode('utf-8'))
     train_data_list = []
     train_class_list = []
+    feature_words = []
     # 类间循环
     for folder in folder_list:
         new_folder_path = os.path.join(train_path, folder)
         files = os.listdir(new_folder_path.decode('utf-8'))
+        cata_data_list = []
         # 类内循环
         j = 1
         for file in files:
-            if j > 100: # 每类text样本数最多100
+            if j > 1000: # 每类text样本数最多100
                 break
             with open(os.path.join(new_folder_path, file).replace('\\','/'), 'r') as fp:
                raw = fp.read()
@@ -34,6 +37,29 @@ def TextProcessingsep(train_path,test_size):
             train_data_list.append(word_list)
             train_class_list.append(folder.decode('utf-8'))
             j += 1
+            cata_data_list.append(word_list)
+
+        all_words_dict = {}
+        for word_list in cata_data_list:
+            for word in word_list:
+                if all_words_dict.has_key(word):
+                    all_words_dict[word] += 1
+                else:
+                    all_words_dict[word] = 1
+        # key函数利用词频进行降序排序
+        all_words_tuple_list = sorted(all_words_dict.items(), key=lambda f: f[1], reverse=True)  # 内建函数sorted参数需为list
+        all_words_list = list(zip(*all_words_tuple_list)[0])
+        # 选取特征词
+
+        n = 1
+        for t in range(0, len(all_words_list), 1):
+            if n > 100:  # feature_words的维度1000
+                break
+            # print all_words_list[t]
+            if not all_words_list[t].isdigit() and all_words_list[t] not in stopwords_set and 1 < len(
+                    all_words_list[t]) < 5:
+                feature_words.append(all_words_list[t])
+                n += 1
 
     ## 划分训练集和测试集
     # train_data_list, test_data_list, train_class_list, test_class_list = sklearn.cross_validation.train_test_split(data_list, class_list, test_size=test_size)
@@ -61,17 +87,6 @@ def TextProcessingsep(train_path,test_size):
             keywords.append(" ".join(tags).encode('utf-8'))
         '''
 
-    # 统计词频放入all_words_dict
-    all_words_dict = {}
-    for word_list in train_data_list:
-        for word in word_list:
-            if all_words_dict.has_key(word):
-                all_words_dict[word] += 1
-            else:
-                all_words_dict[word] = 1
-    # key函数利用词频进行降序排序
-    all_words_tuple_list = sorted(all_words_dict.items(), key=lambda f:f[1], reverse=True) # 内建函数sorted参数需为list
-    all_words_list = list(zip(*all_words_tuple_list)[0])
 
     #print "all: "
     #for i in all_words_list:
@@ -90,27 +105,49 @@ def TextProcessingsep(train_path,test_size):
         print "traindata"
         print "".join(i)
     '''
-    return all_words_list, train_data_list,train_class_list
+    return feature_words, train_data_list,train_class_list
+
+def MakeWordsSet(words_file):
+    words_set = set()
+    with open(words_file, 'r') as fp:
+        for line in fp.readlines():
+            word = line.strip().decode("utf-8")
+            if len(word)>0 and word not in words_set: # 去重
+                words_set.add(word)
+    return words_set
 
 
-train_path='/usr/local/lib/python2.7/dist-packages/adascrawler/newscrawler/Naive-Bayes-Classifier-master/Naive-Bayes-Classifier-master/data/training'
-all_words_list, train_data_list, train_class_list = TextProcessingsep(train_path,test_size=0.2)
+
+
+train_path='./training/'
+stopwords_file = './stopwords_cn.txt'
+stopwords_set = MakeWordsSet(stopwords_file)
+feature, train_data_list, train_class_list = TextProcessingsep(train_path,test_size=0.2)
 file_traindata = open("train_data.txt",'w')
 file_trainclass = open("train_class.txt",'w')
-all_word = open("allword.txt",'w')
+feature_words = open("feature_words.txt",'w')
 
+for i in train_data_list:
+    print i
+    break
+
+# for i in train_class_list:
+#     print i
+# for i in feature:
+#     print i
 for item in train_data_list:
-    temp = str(item).strip('[').strip(']').replace(' ','')
-    file_traindata.write(temp+'\n')
+    temp = str(item).strip('[').strip(']')
+    file_traindata.write(temp+"\n")
 file_traindata.close()
+
 
 for item in train_class_list:
     temp = str(item).strip('[').strip(']').replace(' ', '')
     file_trainclass.write(temp + '\n')
 file_trainclass.close()
 
-for item in all_words_list:
+for item in feature:
     temp = str(item).strip('[').strip(']').replace(' ', '')
-    all_word.write(temp + '\n')
-all_word.close()
+    feature_words.write(temp + '\n')
+feature_words.close()
 
