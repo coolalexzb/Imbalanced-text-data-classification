@@ -14,7 +14,7 @@ from sklearn.svm import SVC
 from sklearn.decomposition import PCA,NMF, LatentDirichletAllocation
 from sklearn.feature_extraction.text import TfidfVectorizer ,HashingVectorizer,CountVectorizer,TfidfTransformer
 from sklearn.naive_bayes import GaussianNB
-import codecs
+
 
 
 '''
