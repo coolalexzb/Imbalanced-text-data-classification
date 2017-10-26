@@ -451,6 +451,7 @@ if __name__ == '__main__':
         '''
         # train_feature_list, test_feature_list = dimension_reduce(train_data_list_f, test_data_list_f)
 
+
         '''
         for x in train_feature_list :
             print "train feature list:    "
