@@ -2,7 +2,7 @@
 import os
 import jieba
 import jieba.analyse
-import codecs
+
 
 '''
     数据预处理，原函数因为样本数量有限，对样本做了训练集和测试集的划分，此处不需要划分，
@@ -123,7 +123,7 @@ train_path='./training/'
 stopwords_file = './stopwords_cn.txt'
 stopwords_set = MakeWordsSet(stopwords_file)
 feature, train_data_list, train_class_list = TextProcessingsep(train_path,test_size=0.2)
-file_traindata = open("train_data.txt",'w')
+file_traindata = open("train_data.txt",'wb')
 file_trainclass = open("train_class.txt",'w')
 feature_words = open("feature_words.txt",'w')
 
@@ -131,13 +131,23 @@ for i in train_data_list:
     print i
     break
 
-# for i in train_class_list:
-#     print i
+for i in train_data_list:
+    for j in i:
+        j.encode("utf-8")
+        print type(j)
+        print "".join(j)
+
+    break
+print len(train_data_list)
 # for i in feature:
 #     print i
 for item in train_data_list:
-    temp = str(item).strip('[').strip(']')
-    file_traindata.write(temp+"\n")
+    #temp = str(item).strip('[').strip(']')
+    #file_traindata.write(temp.encode('gbk')+"\n")
+    for i in item:
+        file_traindata.write("%s"%i.encode("utf-8"))
+        file_traindata.write(" ")
+    file_traindata.write('\n')
 file_traindata.close()
 
 
