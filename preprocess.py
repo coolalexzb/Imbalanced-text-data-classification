@@ -50,16 +50,16 @@ def NewsfromDatabase(news_list):
 news_list = []
 nnews_list=[]
 keywords = []
-stoplist = {}.fromkeys([line.strip() for line in open("/usr/local/lib/python2.7/dist-packages/adascrawler/newscrawler/Naive-Bayes-Classifier-master/Naive-Bayes-Classifier-master/stopwords_cn.txt")])
+stoplist = {}.fromkeys([line.strip() for line in open("./stopwords_cn.txt")])
 num=1
 ReadFromSQL(news_list)
 for i in news_list:
-    txt_path='/usr/local/lib/python2.7/dist-packages/adascrawler/newscrawler/Naive-Bayes-Classifier-master/Naive-Bayes-Classifier-master/data/test/8/'+'8_'+str(num)+'.txt'
+    txt_path='./data/test/8/'+'8_'+str(num)+'.txt'
     f=open(txt_path,'w')
     if i=="":
         continue
-    print "testdata"+str(num)
-    print i
+    print ("testdata"+str(num))
+    print (i)
     nnews_list.append(i)
     f.write(i)
     f.close()
