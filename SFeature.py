@@ -1,5 +1,6 @@
 #coding: utf-8
 
+
 # 提取新闻特征，即事件抽取
 def TextFeatures(data_list, feature_words, flag='sklearn'):
     def text_features(text, feature_words):
