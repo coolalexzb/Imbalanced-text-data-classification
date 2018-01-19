@@ -24,15 +24,11 @@ def TextProcessingsep(train_path):
                 break
             with open(os.path.join(new_folder_path, file).replace('\\','/'), 'r',encoding='utf-8') as fp:
                raw = fp.read()
-            # print raw
-            ## --------------------------------------------------------------------------------
             ## jieba分词
             # jieba.enable_parallel(4) # 开启并行分词模式，参数为并行进程数，不支持windows
             word_cut = jieba.cut(raw, cut_all=False) # 精确模式，返回的结构是一个可迭代的genertor
             word_list = list(word_cut) # genertor转化为list，每个词unicode格式
             # jieba.disable_parallel() # 关闭并行分词模式
-            # print word_list
-            ## --------------------------------------------------------------------------------
             train_data_list.append(word_list)
             train_class_list.append(folder)
             j += 1
@@ -51,10 +47,9 @@ def TextProcessingsep(train_path):
         for i in all_words_tuple_list:
             all_words_list.append(i[0])
         # 选取特征词
-
         n = 1
         for t in range(0, len(all_words_list), 1):
-            if n > 100:  # feature_words的维度1000
+            if n > 100:  # feature_words的维度每类100个
                 break
             # print all_words_list[t]
             if not all_words_list[t].isdigit() and all_words_list[t] not in stopwords_set and 1 < len(
@@ -91,57 +86,40 @@ def MakeWordsSet(words_file):
                 words_set.add(word)
     return words_set
 
+if __name__ == '__main__':
+    flag = "sklearn"
+    train_path='./training/'
+    stopwords_file = './stopwords_cn.txt'
+    stopwords_set = MakeWordsSet(stopwords_file)
+    feature, train_data_list, train_class_list = TextProcessingsep(train_path)
+    file_traindata = open("train_data.txt",'w',encoding='utf-8')
+    file_trainclass = open("train_class.txt",'w',encoding='utf-8')
+    feature_words = open("feature_words.txt",'w',encoding='utf-8')
+    matrix_feature = open("matrix_fea.txt",'w',encoding='utf-8')
+    train_feature_list = TextFeatures(train_data_list,feature,flag)
 
-flag = "sklearn"
-train_path='./training/'
-stopwords_file = './stopwords_cn.txt'
-stopwords_set = MakeWordsSet(stopwords_file)
-feature, train_data_list, train_class_list = TextProcessingsep(train_path)
-file_traindata = open("train_data.txt",'w',encoding='utf-8')
-file_trainclass = open("train_class.txt",'w',encoding='utf-8')
-feature_words = open("feature_words.txt",'w',encoding='utf-8')
-matrix_feature = open("matrix_fea.txt",'w',encoding='utf-8')
-train_feature_list = TextFeatures(train_data_list,feature,flag)
-
-
-for i in train_data_list:
-    print (i)
-    break
-
-for i in train_data_list:
-    for j in i:
-        j.encode("utf-8")
-        print (type(j))
-        print ("".join(j))
-
-    break
-print (len(train_data_list))
-# for i in feature:
-#     print i
-for item in train_data_list:
-    #temp = str(item).strip('[').strip(']')
-    #file_traindata.write(temp.encode('gbk')+"\n")
-    for i in item:
-        file_traindata.write(i)
-        file_traindata.write(" ")
-    file_traindata.write('\n')
-file_traindata.close()
+    for item in train_data_list:
+        for i in item:
+            file_traindata.write(i)
+            file_traindata.write(" ")
+        file_traindata.write('\n')
+    file_traindata.close()
 
 
-for item in train_class_list:
-    temp = str(item).strip('[').strip(']').replace(' ', '')
-    file_trainclass.write(temp + '\n')
-file_trainclass.close()
+    for item in train_class_list:
+        temp = str(item).strip('[').strip(']').replace(' ', '')
+        file_trainclass.write(temp + '\n')
+    file_trainclass.close()
 
-for item in feature:
-    temp = str(item).strip('[').strip(']').replace(' ', '')
-    feature_words.write(temp + '\n')
-feature_words.close()
+    for item in feature:
+        temp = str(item).strip('[').strip(']').replace(' ', '')
+        feature_words.write(temp + '\n')
+    feature_words.close()
 
-for item in train_feature_list:
-    temp = str(item).strip('[').strip(']').replace(' ', '')
-    matrix_feature.write(temp + '\n')
-matrix_feature.close()
+    for item in train_feature_list:
+        temp = str(item).strip('[').strip(']').replace(' ', '')
+        matrix_feature.write(temp + '\n')
+    matrix_feature.close()
 
 
 
