@@ -11,6 +11,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer, HashingVectorizer, 
 from sklearn.naive_bayes import GaussianNB
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from SFeature import *
+import re
 
 import time
 import random
@@ -47,7 +48,7 @@ def TextProcessingsep(test_path):
         # 类内循环
         j = 1
         for file in files:
-            if j > 100:  # 每类text样本数最多100
+            if j > 500:  # 每类text样本数最多100
                 break
             with open(os.path.join(new_folder_path, file).replace('\\', '/'), 'r',encoding='utf-8') as fp:
                 raw = fp.read()
@@ -123,7 +124,15 @@ def TextClassifier(train_feature_list, test_feature_list, train_class_list, test
         classifier = SVC(kernel='linear')
         classifier.fit(train_feature_list, train_class_list)
         print ("presvm:")
-        print (classifier.predict(test_feature_list))
+        r =  classifier.predict(test_feature_list)
+        print (r)
+        n = 0
+        for i in list(r) :
+            n +=1
+            if n%100 ==0:
+                res.write('\n')
+            res.write(str(i) + " ")
+        res.close()
         test_accuracy = classifier.score(test_feature_list, test_class_list)
         print (test_accuracy)
     elif flag == 'GussNB':
@@ -312,17 +321,18 @@ if __name__ == '__main__':
     file_trainclass = open("train_class.txt", 'r', encoding='UTF-8')
     file_features = open("feature_words.txt", 'r', encoding='UTF-8')
     file_traindata = open("matrix_fea.txt", 'r', encoding='UTF-8')
+    res = open("res.txt", 'w', encoding="utf-8")
 
     for lines in file_trainclass:
         train_class_list.append(lines.strip())
     for lines in file_features:
-        feature_words.append(lines.strip())
+        feature_words.append(lines.strip().split(" "))
     for lines in file_traindata:
         tmp = lines.strip().split(',')
-        l = [int(i) for i in tmp]
+        l = [float(i) for i in tmp]
         train_feature_list.append(l)
 
-    test_path = "./test/"
+    test_path = "./newdata/test/"
     test_data_list, test_class_list = TextProcessingsep(test_path)
 
     # 生成stopwords_set
@@ -330,12 +340,13 @@ if __name__ == '__main__':
     stopwords_set = MakeWordsSet(stopwords_file)
     ## 文本特征提取和分类
     num = 100
-    flag = 'sklearn'
+    flag = 'svm'
     test_accuracy_list = []
     #allpre = [0] * num
 
     test_data_list_f = remove_stopwords(test_data_list, stopwords_set)
     test_feature_list = TextFeatures(test_data_list_f, feature_words, flag)
+
 
     #调用降维算法
     #train_feature_list, test_feature_list = dimension_reduce(train_data_list_f, test_data_list_f)
